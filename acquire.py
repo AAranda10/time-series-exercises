@@ -29,7 +29,7 @@ def get_items():
         
     return df
 
-######################################### Stores DF #######################################
+######################################### Get Stores Data #######################################
 
 def get_stores():
     # If there is no csv created, this will get the data from scratch and create one
@@ -47,7 +47,7 @@ def get_stores():
 
     return df
     
-######################################### Sales DF ########################################
+######################################### Get Sales Data ########################################
 
 def get_sales():
     # If there is no csv created, this will get the data from scratch and create one
@@ -77,9 +77,9 @@ def get_sales():
         
     return df
 
-####################################### Joined Sales DF ########################################
+####################################### Get All Sales Data ########################################
 
-def get_joined_sales():
+def get_all_sales_data():
     # If there is no csv created, this will get the data from scratch and create one
     if os.path.isfile('complete_sales_df.csv') == False:
         
@@ -99,9 +99,9 @@ def get_joined_sales():
         
     return df
 
-######################################### Open Power DF ########################################
+######################################### Get Power Data ########################################
 
-def get_open_power():
+def get_power():
     # If there is no csv created, this will get the data from scratch and create one
     if os.path.isfile('power.csv') == False:
         
