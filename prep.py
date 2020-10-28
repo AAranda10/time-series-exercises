@@ -31,10 +31,12 @@ def prep_store_data():
 #################################### Prepare Germany Power Data Function ############################################
 
 def prep_germany_power_data():
+    
     df = germany_power()
     df.Date = pd.to_datetime(df.Date)
     df = df.set_index("Date").sort_index()
     df['year'] = df.index.year
     df['month'] = df.index.month_name()
     df = df.fillna(0)
+    
     return df
