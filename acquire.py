@@ -11,106 +11,124 @@ import os
 import numpy as np
 import pandas as pd
 
-######################################### Get Items Data ########################################
+######################### Helper function used in create big_df ########################################
 
-def get_items():
-    # If there is no csv created, this will get the data from scratch and create one
-    if os.path.isfile('items.csv') == False:
-        
-        url = 'https://python.zach.lol'
-        api = url + '/api/v1/items'
-        response = requests.get(api)
-        items_data = response.json()
-        df = pd.DataFrame(items_data['payload']['items'])
-        
-    else:
-        # This will read csv if there is one created
-        df = pd.read_csv('items.csv', index_col=0)
-        
+def get_df(name):
+    """
+    This function takes in the string
+    'items', 'stores', or 'sales' and
+    returns a df containing all pages and
+    creates a .csv file for future use.
+    """
+    base_url = 'https://python.zach.lol'
+    api_url = base_url + '/api/v1/'
+    response = requests.get(api_url + name)
+    data = response.json()
+    
+    # create list from 1st page
+    my_list = data['payload'][name]
+    
+    # loop through the pages and add to list
+    while data['payload']['next_page'] != None:
+        response = requests.get(base_url + data['payload']['next_page'])
+        data = response.json()
+        my_list.extend(data['payload'][name])
+    
+    # Create DataFrame from list
+    df = pd.DataFrame(my_list)
+    
+    # Write DataFrame to csv file for future use
+    df.to_csv(name + '.csv')
     return df
 
-######################################### Get Stores Data #######################################
+######################### Params Helper function, can be used in big_df ###############################
 
-def get_stores():
-    # If there is no csv created, this will get the data from scratch and create one
-    if os.path.isfile('stores.csv') == False:
-        
-        url = 'https://python.zach.lol'
-        api = url + '/api/v1/stores'
-        response = requests.get(api)
-        stores_data = response.json()
-        df = pd.DataFrame(stores_data['payload']['stores'])
-        
-    else:
-        # This will read csv if there is one created
-        df = pd.read_csv('stores.csv', index_col=0)
-
-    return df
+def get_df_params(name):
+    """
+    This function takes in the string
+    'items', 'stores', or 'sales' and
+    returns a df containing all pages and
+    creates a .csv file for future use.
+    """
+    # Create an empty list names `results`.
+    results = []
     
-######################################### Get Sales Data ########################################
-
-def get_sales():
-    # If there is no csv created, this will get the data from scratch and create one
-    if os.path.isfile('sales.csv') == False:
-        
-        url = 'https://python.zach.lol'
-
-        api = url + '/api/v1/'
-        response = requests.get(api + 'sales')
-        sales_data = response.json()
+    # Create api_url variable
+    api_url = 'https://python.zach.lol/api/v1/'
     
-        # This will return the first page
-        output = sales_data['payload']['sales']
-
-        # This will loop through and do the same to all pages and merge them in one df
-        while sales_data['payload']['next_page'] != None:
+    # Loop through the page parameters until an empty response is returned.
+    for i in range(3):
+        response =  requests.get(items_url, params = {"page": i+1})    
     
-            response = requests.get(url + sales_data['payload']['next_page'])
-            all_sales_data = response.json()
-            output.extend(all_sales_data['payload']['sales'])
+        # We have reached the end of the results
+        if len(response.json()) == 0:   
+            break
+            
+        else:
+            # Convert my response to a dictionary and store as variable `data`
+            data = response.json()
+        
+            # Add the list of dictionaries to my list
+            results.extend(data['payload'][name])
     
-        df = pd.DataFrame(output)
-        
-    else:
-        # This will read csv if there is one created
-        df = pd.read_csv('sales.csv', index_col=0)
-        
+    # Create DataFrame from list
+    df = pd.DataFrame(results)
+    
+    # Write DataFrame to csv file for future use
+    df.to_csv(name + '.csv')
+    
     return df
 
-####################################### Get All Sales Data ########################################
+########################### big_df function  ######################################
 
-def get_all_sales_data():
-    # If there is no csv created, this will get the data from scratch and create one
-    if os.path.isfile('complete_sales_df.csv') == False:
-        
-        items = get_items()
-        stores = get_stores()
-        sales = get_sales()
-    
-        # join sales and stores
-        df = pd.merge(sales, stores, left_on='store', right_on='store_id').drop(columns={'store'})
-    
-        # join the joined df to the items
-        df = pd.merge(df, items, left_on='item', right_on='item_id').drop(columns={'item'})
-        
+def get_store_data():
+    """
+    This function checks for csv files
+    for items, sales, stores, and big_df 
+    if there are none, it creates them.
+    It returns one big_df of merged dfs.
+    """
+    # check for csv files or create them
+    if os.path.isfile('items.csv'):
+        items_df = pd.read_csv('items.csv', index_col=0)
     else:
-        # This will read csv if there is one created
-        df = pd.read_csv('complete_sales_df.csv', index_col=0) 
+        items_df = get_df('items')
         
-    return df
-
-######################################### Get Power Data ########################################
-
-def get_power():
-    # If there is no csv created, this will get the data from scratch and create one
-    if os.path.isfile('power.csv') == False:
+    if os.path.isfile('stores.csv'):
+        stores_df = pd.read_csv('stores.csv', index_col=0)
+    else:
+        stores_df = get_df('stores')
         
+    if os.path.isfile('sales.csv'):
+        sales_df = pd.read_csv('sales.csv', index_col=0)
+    else:
+        sales_df = get_df('sales')
+        
+    if os.path.isfile('big_df.csv'):
+        df = pd.read_csv('big_df.csv', index_col=0)
+        return df
+    else:
+        # merge all of the DataFrames into one
+        df = pd.merge(sales_df, stores_df, left_on='store', right_on='store_id').drop(columns={'store'})
+        df = pd.merge(df, items_df, left_on='item', right_on='item_id').drop(columns={'item'})
+
+        # write merged DateTime df with all data to directory for future use
+        df.to_csv('big_df.csv')
+        return df
+
+    
+############################## opsd energy function  #############################
+
+def germany_power():
+    """
+    This function uses or creates the 
+    opsd_germany_daily csv and returns a df.
+    """
+    if os.path.isfile('germany_power.csv'):
+        df = pd.read_csv('germany_power.csv', index_col=0)
+    else:
         url = 'https://raw.githubusercontent.com/jenfly/opsd/master/opsd_germany_daily.csv'
         df = pd.read_csv(url)
-        
-    else:
-        # This will read csv if there is one created
-        df = pd.read_csv('power.csv', index_col=0)
-    
+        df.to_csv('germany_power.csv')
     return df
 

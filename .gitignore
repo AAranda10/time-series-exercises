@@ -1,2 +1,7 @@
 .ipynb_checkpoints/
 __pycache__/
+big_df.csv
+germany_power.csv
+items.csv
+sales.csv
+stores.csv
